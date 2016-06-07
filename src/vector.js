@@ -597,6 +597,14 @@
           }
         },
 
+        unFocus: function() {
+            if (document.selection) {
+                document.selection.empty()
+            } else {
+                window.getSelection().removeAllRanges()
+            }
+        },
+
         makeDraggableByMouse: function() {
           /*
            * Draggable
@@ -604,6 +612,7 @@
 
           var dragCoord, mouseIsDown = false, map = this;
           map.dragged = false;
+          map.scalable = false;
 
           addEvent(document, 'mousemove', function(e) {
             if (mouseIsDown){
@@ -613,6 +622,7 @@
               map.applyTransform(x, y);
               dragCoord = {x:e.clientX, y: e.clientY};
               map.dragged = true;
+              map.unFocus();
             }
           });
           addEvent(document, 'mouseup', function() {
@@ -625,14 +635,30 @@
             dragCoord = {x:e.clientX, y: e.clientY};
           });
 
+          // Scalable initialization delay.
+          var leaved = false;
+          addEvent(this.container, 'mouseenter', function(e) {
+              setTimeout(function() {
+                  if (leaved) {
+                      map.scalable = true;
+                      leaved = false;
+                  }
+              }, 3000);
+          });
+
+          addEvent(this.container, 'mouseleave', function(e) {
+              map.scalable = false;
+              leaved = true;
+          });
+
           /*
            * Scalable
            */
-
           addEvent(this.container, 'DOMMouseScroll', onScroll);
           addEvent(this.container, 'mousewheel', onScroll);
 
           function onScroll(e){
+            if (!map.scalable) { return; }
             preventDefault(e); stopEvent(e);
             var wheel = e.wheelDelta || -e.detail;
 
